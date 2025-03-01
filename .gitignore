@@ -3,4 +3,4 @@ dist
 .env
 prisma/migrations/*
 !prisma/migrations/.gitkeep
-/coverage/
+coverage/
