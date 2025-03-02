@@ -24,6 +24,10 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      DATABASE_URL: "postgresql://user:password@localhost:5432/mydatabase"
+      JWT_SECRET: "your-secret-key"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,12 +45,19 @@ jobs:
         run: npx prisma generate
 
       - name: Apply Prisma migrations
-        env:
-          DATABASE_URL: "postgresql://user:password@localhost:5432/mydatabase"
-        run: npx prisma migrate deploy
+        run: |
+          npx prisma migrate deploy --schema prisma/schema.prisma
+          if [ $? -ne 0 ]; then
+            echo "Prisma migration failed"
+            exit 1
+          fi
+          sleep 5  # Wait for DB to stabilize
 
       - name: Build project
         run: npm run build
 
       - name: Run tests
         run: npm test
+
+      - name: Build Docker image
+        run: docker-compose build
