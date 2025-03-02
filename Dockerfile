@@ -7,4 +7,6 @@ COPY src/ ./src/
 COPY prisma/ ./prisma/
 RUN npx prisma generate
 RUN npm run build
+# Copy source maps to container
+COPY dist/ ./dist/
 CMD ["npx", "nodemon", "--exec", "node", "--inspect=0.0.0.0:9229", "dist/server.js"]
