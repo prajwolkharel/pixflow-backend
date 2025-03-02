@@ -1,11 +1,12 @@
 import request from 'supertest';
-import app from '../app';
+import app from '../app.js';
 
 describe('Auth', () => {
   it('should register a user with POST /auth/register', async () => {
+    const timestamp = Date.now();
     const userData = {
       name: 'Test User',
-      email: 'test@example.com',
+      email: `test${timestamp}@example.com`,
       password: 'password123',
       role: 'EMPLOYEE'
     };

@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app from '../app';
+import app from '../app.js';
 
 describe('Server', () => {
   it('should return API is running on GET /', async () => {

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { SuccessResponseParams, ErrorResponseParams } from '../types/response.types.js';
 
 export const responseMiddleware = (req: Request, res: Response, next: NextFunction) => {
   res.ok = ({ status, message, data = null }) => {

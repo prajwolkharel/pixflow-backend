@@ -3,7 +3,7 @@ services:
     build: .
     ports:
       - "5000:5000"
-      - "9229:9229" # Debug port
+      - "9229:9229"
     depends_on:
       - db
     env_file:

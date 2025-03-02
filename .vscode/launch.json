@@ -7,13 +7,15 @@
       "name": "Debug Docker",
       "port": 9229,
       "address": "localhost",
-      "localRoot": "${workspaceFolder}",
-      "remoteRoot": "/app",
+      "localRoot": "${workspaceFolder}/src",
+      "remoteRoot": "/app/dist",
       "skipFiles": ["<node_internals>/**"],
       "restart": true,
       "timeout": 30000,
       "trace": true,
-      "preLaunchTask": "startDocker"
+      "sourceMaps": true,
+      "smartStep": true,
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
     }
   ]
 }
