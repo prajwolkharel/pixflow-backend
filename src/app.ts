@@ -1,21 +1,16 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import authRoutes from './routes/auth.routes.js';
+import { responseMiddleware } from './middlewares/response.js';
 
 const app = express();
 
 app.use(express.json());
+app.use(responseMiddleware);
 
-const apiResponse = (
-  res: Response,
-  status: number,
-  success: boolean,
-  message: string,
-  data: any = null
-) => {
-  res.status(status).json({ success, message, data });
-};
-
-app.get('/', (req: Request, res: Response) => {
-  apiResponse(res, 200, true, 'API is running...', null);
+app.get('/', (req: Request, res: Response, next: NextFunction) => {
+  res.ok({ status: 200, message: 'API is running...' });
 });
+
+app.use('/auth', authRoutes);
 
 export default app;
