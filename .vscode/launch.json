@@ -9,7 +9,10 @@
         "address": "localhost",
         "localRoot": "${workspaceFolder}",
         "remoteRoot": "/app",
-        "skipFiles": ["<node_internals>/**"]
+        "skipFiles": ["<node_internals>/**"],
+        "restart": true,          // Retry if Nodemon restarts
+        "timeout": 30000,         // Wait longer for attachment
+        "trace": true             // Log debug connection attempts
       }
     ]
   }
