@@ -8,7 +8,7 @@ export const registerUser = async ({ name, email, password, role }: RegisterRequ
     data: {
       name,
       email,
-      password, // Plaintext for now—hashing next
+      password,
       role
     },
     select: {
