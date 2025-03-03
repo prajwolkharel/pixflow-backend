@@ -51,7 +51,7 @@ jobs:
             echo "Prisma migration failed"
             exit 1
           fi
-          sleep 5  # Wait for DB to stabilize
+          sleep 5
 
       - name: Build project
         run: npm run build

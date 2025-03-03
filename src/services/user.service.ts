@@ -1,16 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import { RegisterRequest, RegisterResponse } from '../types/auth.types.js';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 export const registerUser = async ({ name, email, password, role }: RegisterRequest): Promise<RegisterResponse> => {
-  console.log(`Service:: name: ${name}, ${email}, ${password}, ${role}`);
-
+  const hashedPassword = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: {
       name,
       email,
-      password,
+      password: hashedPassword,
       role
     },
     select: {
@@ -20,8 +20,5 @@ export const registerUser = async ({ name, email, password, role }: RegisterRequ
       role: true
     }
   });
-
-  console.log(`Service:: user: ${user}`);
-
   return user;
 };

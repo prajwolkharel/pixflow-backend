@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import authRoutes from './routes/auth.routes.js';
 import { responseMiddleware } from './middlewares/response.js';
+import { errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
 
@@ -12,5 +13,7 @@ app.get('/', (req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use('/auth', authRoutes);
+
+app.use(errorHandler);
 
 export default app;

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { registerUser } from '../services/user.service.js';
 import { RegisterRequest } from '../types/auth.types.js';
+import { registerSchema } from '../validations/auth.validation.js';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -8,6 +9,8 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     const user = await registerUser({ name, email, password, role });
     res.ok({ status: 201, message: 'User registered successfully', data: user });
   } catch (error) {
-    res.fail({ status: 400, message: error instanceof Error ? error.message : 'Unknown error' });
+    next(error);
   }
 };
+
+export { registerSchema };

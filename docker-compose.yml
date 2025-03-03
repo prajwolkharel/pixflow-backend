@@ -10,7 +10,7 @@ services:
       - .env
     environment:
       - NODE_ENV=development
-    command: ["npm", "test"]  # Run tests instead of starting server
+    command: ["npm", "test"]
   db:
     image: postgres:14
     environment:
