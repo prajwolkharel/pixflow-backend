@@ -7,7 +7,7 @@ export interface SuccessResponseParams {
 export interface ErrorResponseParams {
   status: number;
   message: string;
-  data?: any;
+  data?: { errors?: { field: string; message: string }[]; errorCode?: string } | null;
 }
 
 export type SuccessResponse = (params: SuccessResponseParams) => void;
