@@ -19,3 +19,13 @@ export const registerSchema = Joi.object({
     'any.required': '"role" is required'
   })
 }).required();
+
+export const loginSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    "string.email": '"email" must be a valid email',
+    "any.required": '"email" is required'
+  }),
+  password: Joi.string().required().messages({
+    "any.required": '"password" is required'
+  })
+}).required();

@@ -17,7 +17,8 @@
     "bcryptjs": "^2.4.3",
     "express": "^4.21.2",
     "dotenv": "^16.4.7",
-    "joi": "^17.13.3"
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
@@ -26,6 +27,7 @@
     "@types/supertest": "^6.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/joi": "^17.2.3",
+    "@types/jsonwebtoken": "^9.0.6",
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
     "prisma": "^6.4.1",

@@ -84,8 +84,32 @@ describe('Auth', () => {
     });
   });
 
+  it("should login a user with POST /auth/login successfully", async () => {
+    const timestamp = Date.now();
+    const userData = {
+      name: "Login User",
+      email: `login${timestamp}@example.com`,
+      password: "password123",
+      role: "EMPLOYEE"
+    }
+
+    await request(app)
+      .post("/auth/register")
+      .send(userData);
+
+    const loginRes = await request(app)
+      .post("/auth/login")
+      .send({email: userData.email, password: userData.password});
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.success).toBe(true);
+    expect(loginRes.body.message).toBe("Login successful");
+    expect(loginRes.body.data).toHaveProperty("token");
+    expect(typeof loginRes.body.data.token).toBe("string");
+  });
+
   afterEach(async () => {
     await prisma.user.deleteMany({ where: { email: { contains: 'test' } } });
+    await prisma.user.deleteMany({ where: {email: { contains: "login" } } });
   });
 
   afterAll(async () => {
