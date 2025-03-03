@@ -65,6 +65,25 @@ describe('Auth', () => {
     });
   });
 
+  it("should reject registration with an invalid email", async () => {
+    const invalidUserData = {
+      name: "Test User",
+      email: "not-an-email",
+      password: "password123",
+      role: "EMPLOYEE"
+    };
+    const res = await request(app)
+      .post("/auth/register")
+      .send(invalidUserData);
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe("Validation failed");
+    expect(res.body.data.errors).toContainEqual({
+      field: "email",
+      message: '"email" must be a valid email'
+    });
+  });
+
   afterEach(async () => {
     await prisma.user.deleteMany({ where: { email: { contains: 'test' } } });
   });
