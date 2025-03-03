@@ -39,7 +39,7 @@ describe('Auth', () => {
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toBe('Validation failed');
-    expect(res.body.data).toContainEqual({
+    expect(res.body.data.errors).toContainEqual({
       field: 'name',
       message: '"name" is not allowed to be empty'
     });
@@ -59,7 +59,7 @@ describe('Auth', () => {
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toBe('Validation failed');
-    expect(res.body.data).toContainEqual({
+    expect(res.body.data.errors).toContainEqual({
       field: 'password',
       message: '"password" length must be at least 8 characters long'
     });
