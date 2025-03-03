@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
-import { ValidationError } from '../types/errors.js';
+import { ValidationError, AuthenticationError } from '../types/errors.js';
 
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   let status = 500;
@@ -11,6 +11,9 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
     status = err.status;
     message = err.message;
     data = { errors: err.errors };
+  } else if (err instanceof AuthenticationError) {
+    status = err.status;
+    message = err.message;
   } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
     status = 400;
     message = 'Database error';
