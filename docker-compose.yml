@@ -10,6 +10,9 @@ services:
       - .env
     environment:
       - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
     command: ["npm", "test"]
   db:
     image: postgres:14

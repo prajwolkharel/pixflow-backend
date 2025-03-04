@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service.js';
 import { RegisterRequest, RegisterResponse } from '../types/auth.types.js';
-import { loginSchema, registerSchema } from '../validations/auth.validation.js';
+import { registerSchema, loginSchema } from '../validations/auth.validation.js';
 
 export class AuthController {
   private authService: AuthService;
@@ -22,9 +22,9 @@ export class AuthController {
 
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const {email, password} = req.body;
+      const { email, password } = req.body;
       const token: string = await this.authService.loginUser(email, password);
-      res.ok({status: 200, message: "Login successful", data: {token}});
+      res.ok({ status: 200, message: 'Login successful', data: { token } });
     } catch (error) {
       next(error);
     }

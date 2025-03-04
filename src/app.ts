@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import authRoutes from './routes/auth.routes.js';
+import taskRoutes from './routes/task.routes.js';
 import { responseMiddleware } from './middlewares/response.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
@@ -13,6 +14,7 @@ app.get('/', (req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use('/auth', authRoutes);
+app.use('/tasks', taskRoutes);
 
 app.use(errorHandler);
 
