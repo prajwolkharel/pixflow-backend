@@ -34,7 +34,19 @@ export const taskSchema = Joi.object({
     'any.required': '"client" is required'
   }),
   assignedToId: Joi.string().uuid().required().messages({
-    'string.uuid': '"assignedToId" must be a valid UUID',
+    'string.uuid': '"assignedToId" must be a valid GUID',
     'any.required': '"assignedToId" is required'
   })
 }).required();
+
+export const paginationSchema = Joi.object({
+  limit: Joi.number().integer().min(1).max(100).default(10).messages({
+    'number.base': '"limit" must be a number',
+    'number.min': '"limit" must be greater than or equal to 1',
+    'number.max': '"limit" must be less than or equal to 100'
+  }),
+  offset: Joi.number().integer().min(0).default(0).messages({
+    'number.base': '"offset" must be a number',
+    'number.min': '"offset" must be greater than or equal to 0'
+  })
+});

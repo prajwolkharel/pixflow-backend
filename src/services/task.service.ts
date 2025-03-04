@@ -55,7 +55,6 @@ export class TaskService {
       }
     });
 
-    // Transform Prisma output to match TaskResponse
     return {
       id: task.id,
       title: task.title,
@@ -72,6 +71,61 @@ export class TaskService {
       assignedById: task.assignedById,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString()
+    };
+  }
+
+  async listTasks(userId: string, userRole: string, limit: number, offset: number): Promise<{ tasks: TaskResponse[], totalCount: number }> {
+    const whereClause = userRole === 'EMPLOYEE' ? { assignedToId: userId } : {};
+
+    // Fetch total count
+    const totalCount = await this.prisma.task.count({ where: whereClause });
+
+    // Fetch paginated tasks, ordered by createdAt ascending
+    const tasks = await this.prisma.task.findMany({
+      where: whereClause,
+      skip: offset,
+      take: limit,
+      orderBy: {
+        createdAt: 'asc' // Sort by creation time ascending
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        priority: true,
+        assignDate: true,
+        dueDate: true,
+        status: true,
+        startDate: true,
+        completeDate: true,
+        client: true,
+        isApproved: true,
+        assignedToId: true,
+        assignedById: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      tasks: tasks.map(task => ({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        assignDate: task.assignDate.toISOString(),
+        dueDate: task.dueDate.toISOString(),
+        status: task.status,
+        startDate: task.startDate ? task.startDate.toISOString() : task.startDate,
+        completeDate: task.completeDate ? task.completeDate.toISOString() : task.completeDate,
+        client: task.client,
+        isApproved: task.isApproved,
+        assignedToId: task.assignedToId,
+        assignedById: task.assignedById,
+        createdAt: task.createdAt.toISOString(),
+        updatedAt: task.updatedAt.toISOString()
+      })),
+      totalCount
     };
   }
 }

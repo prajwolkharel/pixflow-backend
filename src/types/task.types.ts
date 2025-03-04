@@ -1,27 +1,27 @@
 export interface TaskRequest {
   title: string;
-  description: string; // Required
+  description: string;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
   assignDate?: string;
-  dueDate: string; // Required
+  dueDate: string;
   status?: 'TO_DO' | 'IN_PROGRESS' | 'SUBMITTED' | 'IN_REVIEW' | 'COMPLETED';
   startDate?: string;
   completeDate?: string | null;
-  client: string; // Required
+  client: string;
   assignedToId: string;
 }
 
 export interface TaskResponse {
   id: string;
   title: string;
-  description: string; // Required
+  description: string;
   priority: string;
   assignDate: string;
-  dueDate: string; // Required
+  dueDate: string;
   status: string;
-  startDate?: string | null; // Can be null or undefined
-  completeDate?: string | null; // Can be null or undefined
-  client: string; // Required
+  startDate?: string | null;
+  completeDate?: string | null;
+  client: string;
   isApproved: boolean;
   assignedToId: string;
   assignedById: string;

@@ -10,20 +10,20 @@ export class AuthController {
     this.authService = authService;
   }
 
-  async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async registerUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { name, email, password, role } = req.body as RegisterRequest;
-      const user: RegisterResponse = await this.authService.registerUser({ name, email, password, role });
+      const userData = req.body as RegisterRequest;
+      const user: RegisterResponse = await this.authService.registerUser(userData);
       res.ok({ status: 201, message: 'User registered successfully', data: user });
     } catch (error) {
       next(error);
     }
   }
 
-  async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async loginUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email, password } = req.body;
-      const token: string = await this.authService.loginUser(email, password);
+      const token = await this.authService.loginUser(email, password);
       res.ok({ status: 200, message: 'Login successful', data: { token } });
     } catch (error) {
       next(error);

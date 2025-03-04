@@ -10,8 +10,8 @@ export const registerSchema = Joi.object({
     'string.email': '"email" must be a valid email',
     'any.required': '"email" is required'
   }),
-  password: Joi.string().min(8).required().messages({
-    'string.min': '"password" length must be at least 8 characters long',
+  password: Joi.string().min(6).required().messages({
+    'string.min': '"password" must be at least 6 characters long',
     'any.required': '"password" is required'
   }),
   role: Joi.string().valid('ADMIN', 'MANAGER', 'EMPLOYEE').required().messages({
