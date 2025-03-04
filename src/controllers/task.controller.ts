@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { TaskService } from '../services/task.service';
-import { TaskRequest, TaskResponse } from '../types/task.types.js';
-import { taskSchema } from '../validations/task.validation.js';
+import { Request, Response, NextFunction } from "express";
+import { TaskService } from "../services/task.service";
+import { TaskRequest, TaskResponse } from "../types/task.types.js";
+import { taskSchema } from "../validations/task.validation.js";
 
 export class TaskController {
   private taskService: TaskService;
@@ -10,9 +10,24 @@ export class TaskController {
     this.taskService = taskService;
   }
 
-  async createTask(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async createTask(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
-      const { title, description, priority, assignDate, dueDate, status, startDate, completeDate, client, assignedToId } = req.body as TaskRequest;
+      const {
+        title,
+        description,
+        priority,
+        assignDate,
+        dueDate,
+        status,
+        startDate,
+        completeDate,
+        client,
+        assignedToId,
+      } = req.body as TaskRequest;
       const assignedById = req.user!.id;
       const task: TaskResponse = await this.taskService.createTask({
         title,
@@ -25,9 +40,9 @@ export class TaskController {
         completeDate,
         client,
         assignedToId,
-        assignedById
+        assignedById,
       });
-      res.ok({ status: 201, message: 'Task created successfully', data: task });
+      res.ok({ status: 201, message: "Task created successfully", data: task });
     } catch (error) {
       next(error);
     }

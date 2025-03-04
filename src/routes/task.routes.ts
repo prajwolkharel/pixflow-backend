@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.post("/",
   authenticateToken,
-  authorizeRole(['MANAGER']),
+  authorizeRole(['MANAGER']), // Restricts to MANAGER role
   validate(taskSchema),
   taskController.createTask.bind(taskController)
 );
