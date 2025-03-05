@@ -36,9 +36,17 @@ router.put(
   '/:id',
   authenticateToken,
   authorizeRole(['MANAGER', 'EMPLOYEE']),
-  validate(idSchema, 'params'), // Validate task ID in params
-  validate(taskUpdateSchema, 'body'), // Validate update data in body
+  validate(idSchema, 'params'),
+  validate(taskUpdateSchema, 'body'),
   taskController.updateTaskById.bind(taskController)
+);
+
+router.delete(
+  '/:id',
+  authenticateToken,
+  authorizeRole(['MANAGER', 'EMPLOYEE']), // EMPLOYEE will still be rejected by service logic
+  validate(idSchema, 'params'),
+  taskController.deleteTaskById.bind(taskController)
 );
 
 export default router;

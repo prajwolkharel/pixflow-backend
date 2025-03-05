@@ -102,6 +102,22 @@ export class TaskController {
       next(error);
     }
   }
+
+  async deleteTaskById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const taskId = req.params.id;
+      const userRole = (req as any).user.role;
+
+      await this.taskService.deleteTaskById(taskId, userRole);
+      res.ok({
+        status: 200,
+        message: 'Task deleted successfully',
+        data: null
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export { taskSchema, paginationSchema, querySchema, idSchema, taskUpdateSchema };

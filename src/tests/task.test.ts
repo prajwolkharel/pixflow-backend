@@ -2058,6 +2058,198 @@ it('should return 400 for invalid update data', async () => {
   ]));
 });
 
+// New test: MANAGER can delete any task by ID
+it('should allow MANAGER to delete any task by ID', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Create a task
+  const taskData = {
+    title: 'Task to Delete',
+    description: 'This task will be deleted',
+    priority: 'HIGH',
+    assignDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'TO_DO',
+    startDate: new Date().toISOString(),
+    completeDate: null,
+    client: 'Test Client',
+    assignedToId: employeeId
+  };
+  const createRes = await request(app)
+    .post('/tasks')
+    .set('Authorization', `Bearer ${token}`)
+    .send(taskData);
+  const taskId = createRes.body.data.id;
+
+  // Delete the task
+  const deleteRes = await request(app)
+    .delete(`/tasks/${taskId}`)
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(deleteRes.status).toBe(200);
+  expect(deleteRes.body.success).toBe(true);
+  expect(deleteRes.body.message).toBe('Task deleted successfully');
+  expect(deleteRes.body.data).toBeNull();
+
+  // Verify the task is deleted
+  const getRes = await request(app)
+    .get(`/tasks/${taskId}`)
+    .set('Authorization', `Bearer ${token}`);
+  expect(getRes.status).toBe(404);
+});
+
+// New test: EMPLOYEE cannot delete a task
+it('should reject EMPLOYEE deleting a task with 403', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const managerLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const managerToken = managerLoginRes.body.data.token;
+
+  // Create a task assigned to the employee
+  const taskData = {
+    title: 'Employee Task',
+    description: 'This is an employee task',
+    priority: 'MEDIUM',
+    assignDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'TO_DO',
+    startDate: new Date().toISOString(),
+    completeDate: null,
+    client: 'Test Client',
+    assignedToId: employeeId
+  };
+  const createRes = await request(app)
+    .post('/tasks')
+    .set('Authorization', `Bearer ${managerToken}`)
+    .send(taskData);
+  const taskId = createRes.body.data.id;
+
+  const employeeLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: employeeData.email, password: employeeData.password });
+  const employeeToken = employeeLoginRes.body.data.token;
+
+  // Attempt to delete the task as employee
+  const deleteRes = await request(app)
+    .delete(`/tasks/${taskId}`)
+    .set('Authorization', `Bearer ${employeeToken}`);
+
+  expect(deleteRes.status).toBe(403);
+  expect(deleteRes.body.success).toBe(false);
+  expect(deleteRes.body.message).toBe('Access denied: Requires MANAGER role');
+});
+
+// New test: Returns 404 for non-existent task ID
+it('should return 404 when deleting a non-existent task ID', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Attempt to delete a non-existent task
+  const nonExistentId = '123e4567-e89b-12d3-a456-426614174000'; // Valid UUID format, but not in DB
+  const deleteRes = await request(app)
+    .delete(`/tasks/${nonExistentId}`)
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(deleteRes.status).toBe(404);
+  expect(deleteRes.body.success).toBe(false);
+  expect(deleteRes.body.message).toBe('Task not found');
+});
+
+// New test: Returns 400 for invalid task ID format
+it('should return 400 for invalid task ID format when deleting', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Attempt to delete with invalid ID format
+  const invalidId = 'not-a-uuid';
+  const deleteRes = await request(app)
+    .delete(`/tasks/${invalidId}`)
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(deleteRes.status).toBe(400);
+  expect(deleteRes.body.success).toBe(false);
+  expect(deleteRes.body.message).toBe('Validation failed');
+  expect(deleteRes.body.data.errors).toEqual(expect.arrayContaining([
+    expect.objectContaining({ field: 'id', message: expect.stringContaining('"id" must be a valid GUID') })
+  ]));
+});
   afterEach(async () => {
     await prisma.task.deleteMany();
     await prisma.user.deleteMany({ where: { email: { contains: "test" } } });

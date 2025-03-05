@@ -198,7 +198,6 @@ export class TaskService {
     userRole: string,
     updateData: Partial<TaskRequest>
   ): Promise<TaskResponse> {
-    // Fetch the existing task
     const task = await this.prisma.task.findUnique({
       where: { id: taskId }
     });
@@ -207,12 +206,10 @@ export class TaskService {
       throw new Error('Task not found');
     }
 
-    // Access control: EMPLOYEE can only update tasks assigned to them
     if (userRole === 'EMPLOYEE' && task.assignedToId !== userId) {
       throw new Error('Access denied: You are not assigned to this task');
     }
 
-    // Prepare update data, converting dates if provided
     const dataToUpdate: any = {};
     if (updateData.title) dataToUpdate.title = updateData.title;
     if (updateData.description) dataToUpdate.description = updateData.description;
@@ -225,7 +222,6 @@ export class TaskService {
     if (updateData.client) dataToUpdate.client = updateData.client;
     if (updateData.assignedToId) dataToUpdate.assignedToId = updateData.assignedToId;
 
-    // Update the task
     const updatedTask = await this.prisma.task.update({
       where: { id: taskId },
       data: dataToUpdate,
@@ -265,5 +261,26 @@ export class TaskService {
       createdAt: updatedTask.createdAt.toISOString(),
       updatedAt: updatedTask.updatedAt.toISOString()
     };
+  }
+
+  async deleteTaskById(taskId: string, userRole: string): Promise<void> {
+    // Fetch the task to check existence
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId }
+    });
+
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    // Access control: Only MANAGER can delete tasks
+    if (userRole !== 'MANAGER') {
+      throw new Error('Access denied: Requires MANAGER role');
+    }
+
+    // Delete the task
+    await this.prisma.task.delete({
+      where: { id: taskId }
+    });
   }
 }
