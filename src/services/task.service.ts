@@ -84,10 +84,8 @@ export class TaskService {
     sortBy: string = 'createdAt',
     order: 'asc' | 'desc' = 'asc'
   ): Promise<{ tasks: TaskResponse[], totalCount: number }> {
-    // Base where clause based on user role
     const whereClause: any = userRole === 'EMPLOYEE' ? { assignedToId: userId } : {};
 
-    // Apply filters if provided
     if (status) {
       whereClause.status = status;
     }
@@ -95,10 +93,8 @@ export class TaskService {
       whereClause.priority = priority;
     }
 
-    // Fetch total count with filters
     const totalCount = await this.prisma.task.count({ where: whereClause });
 
-    // Fetch paginated tasks with filters and dynamic sorting
     const tasks = await this.prisma.task.findMany({
       where: whereClause,
       skip: offset,
@@ -144,6 +140,57 @@ export class TaskService {
         updatedAt: task.updatedAt.toISOString()
       })),
       totalCount
+    };
+  }
+
+  async getTaskById(taskId: string, userId: string, userRole: string): Promise<TaskResponse> {
+    // Fetch task by ID
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        priority: true,
+        assignDate: true,
+        dueDate: true,
+        status: true,
+        startDate: true,
+        completeDate: true,
+        client: true,
+        isApproved: true,
+        assignedToId: true,
+        assignedById: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    // Access control: EMPLOYEE can only fetch tasks assigned to them
+    if (userRole === 'EMPLOYEE' && task.assignedToId !== userId) {
+      throw new Error('Access denied: You are not assigned to this task');
+    }
+
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      assignDate: task.assignDate.toISOString(),
+      dueDate: task.dueDate.toISOString(),
+      status: task.status,
+      startDate: task.startDate ? task.startDate.toISOString() : task.startDate,
+      completeDate: task.completeDate ? task.completeDate.toISOString() : task.completeDate,
+      client: task.client,
+      isApproved: task.isApproved,
+      assignedToId: task.assignedToId,
+      assignedById: task.assignedById,
+      createdAt: task.createdAt.toISOString(),
+      updatedAt: task.updatedAt.toISOString()
     };
   }
 }

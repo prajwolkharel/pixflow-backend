@@ -24,6 +24,10 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
     message = err.message || 'Internal Server Error';
     if (message === 'Invalid email or password') {
       status = 401;
+    } else if (message === 'Task not found') {
+      status = 404;
+    } else if (message === 'Access denied: You are not assigned to this task') {
+      status = 403;
     }
   }
 

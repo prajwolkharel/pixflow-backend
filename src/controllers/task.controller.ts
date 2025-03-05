@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { TaskService } from '../services/task.service.js';
 import { TaskRequest, TaskResponse } from '../types/task.types.js';
-import { taskSchema, paginationSchema, querySchema } from '../validations/task.validation.js';
+import { taskSchema, paginationSchema, querySchema, idSchema } from '../validations/task.validation.js';
 
 export class TaskController {
   private taskService: TaskService;
@@ -67,6 +67,23 @@ export class TaskController {
       next(error);
     }
   }
+
+  async getTaskById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const taskId = req.params.id;
+      const userId = (req as any).user.id;
+      const userRole = (req as any).user.role;
+
+      const task = await this.taskService.getTaskById(taskId, userId, userRole);
+      res.ok({
+        status: 200,
+        message: 'Task fetched successfully',
+        data: task
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
-export { taskSchema, paginationSchema, querySchema };
+export { taskSchema, paginationSchema, querySchema, idSchema };

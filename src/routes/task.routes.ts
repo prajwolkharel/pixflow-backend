@@ -3,7 +3,7 @@ import { TaskController } from '../controllers/task.controller.js';
 import { validate } from '../middlewares/validation.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { authorizeRole } from '../middlewares/role.js';
-import { taskSchema, querySchema } from '../validations/task.validation.js';
+import { taskSchema, querySchema, idSchema } from '../validations/task.validation.js';
 
 const taskController = new TaskController();
 const router = express.Router();
@@ -20,8 +20,16 @@ router.get(
   '/',
   authenticateToken,
   authorizeRole(['MANAGER', 'EMPLOYEE']),
-  validate(querySchema, 'query'), // Validate all query parameters (status, priority, limit, offset, sortBy, order)
+  validate(querySchema, 'query'),
   taskController.listTasks.bind(taskController)
+);
+
+router.get(
+  '/:id',
+  authenticateToken,
+  authorizeRole(['MANAGER', 'EMPLOYEE']),
+  validate(idSchema, 'params'), // Validate task ID in params
+  taskController.getTaskById.bind(taskController)
 );
 
 export default router;

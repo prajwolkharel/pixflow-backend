@@ -74,3 +74,10 @@ export const querySchema = Joi.object({
     'any.only': '"order" must be one of [asc, desc]'
   })
 });
+
+export const idSchema = Joi.object({
+  id: Joi.string().uuid().required().messages({
+    'string.uuid': '"id" must be a valid GUID',
+    'any.required': '"id" is required'
+  })
+});
