@@ -81,3 +81,37 @@ export const idSchema = Joi.object({
     'any.required': '"id" is required'
   })
 });
+
+export const taskUpdateSchema = Joi.object({
+  title: Joi.string().min(1).optional().messages({
+    'string.empty': '"title" is not allowed to be empty',
+    'string.min': '"title" must be at least 1 character long'
+  }),
+  description: Joi.string().optional().messages({
+    'string.base': '"description" must be a string'
+  }),
+  priority: Joi.string().valid('LOW', 'MEDIUM', 'HIGH').optional().messages({
+    'any.only': '"priority" must be one of [LOW, MEDIUM, HIGH]'
+  }),
+  assignDate: Joi.string().isoDate().optional().messages({
+    'string.isoDate': '"assignDate" must be a valid ISO date'
+  }),
+  dueDate: Joi.string().isoDate().optional().messages({
+    'string.isoDate': '"dueDate" must be a valid ISO date'
+  }),
+  status: Joi.string().valid('TO_DO', 'IN_PROGRESS', 'SUBMITTED', 'IN_REVIEW', 'COMPLETED').optional().messages({
+    'any.only': '"status" must be one of [TO_DO, IN_PROGRESS, SUBMITTED, IN_REVIEW, COMPLETED]'
+  }),
+  startDate: Joi.string().isoDate().allow(null).optional().messages({
+    'string.isoDate': '"startDate" must be a valid ISO date'
+  }),
+  completeDate: Joi.string().isoDate().allow(null).optional().messages({
+    'string.isoDate': '"completeDate" must be a valid ISO date'
+  }),
+  client: Joi.string().optional().messages({
+    'string.base': '"client" must be a string'
+  }),
+  assignedToId: Joi.string().uuid().optional().messages({
+    'string.uuid': '"assignedToId" must be a valid GUID'
+  })
+});

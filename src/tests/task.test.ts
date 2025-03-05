@@ -1724,6 +1724,340 @@ it('should return 400 for invalid task ID format', async () => {
   ]));
 });
 
+// New test: MANAGER can update any task by ID
+it('should allow MANAGER to update any task by ID', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Create a task
+  const taskData = {
+    title: 'Original Task',
+    description: 'This is the original task',
+    priority: 'HIGH',
+    assignDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'TO_DO',
+    startDate: new Date().toISOString(),
+    completeDate: null,
+    client: 'Test Client',
+    assignedToId: employeeId
+  };
+  const createRes = await request(app)
+    .post('/tasks')
+    .set('Authorization', `Bearer ${token}`)
+    .send(taskData);
+  const taskId = createRes.body.data.id;
+
+  // Update the task
+  const updateData = {
+    title: 'Updated Task',
+    status: 'IN_PROGRESS',
+    priority: 'MEDIUM'
+  };
+  const updateRes = await request(app)
+    .put(`/tasks/${taskId}`)
+    .set('Authorization', `Bearer ${token}`)
+    .send(updateData);
+
+  expect(updateRes.status).toBe(200);
+  expect(updateRes.body.success).toBe(true);
+  expect(updateRes.body.message).toBe('Task updated successfully');
+  expect(updateRes.body.data).toMatchObject({
+    id: taskId,
+    title: 'Updated Task',
+    description: 'This is the original task',
+    priority: 'MEDIUM',
+    status: 'IN_PROGRESS',
+    client: 'Test Client',
+    assignedToId: employeeId
+  });
+});
+
+// New test: EMPLOYEE can update their assigned task by ID
+it('should allow EMPLOYEE to update their assigned task by ID', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const managerLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const managerToken = managerLoginRes.body.data.token;
+
+  // Create a task assigned to the employee
+  const taskData = {
+    title: 'Employee Task',
+    description: 'This is an employee task',
+    priority: 'MEDIUM',
+    assignDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'TO_DO',
+    startDate: new Date().toISOString(),
+    completeDate: null,
+    client: 'Test Client',
+    assignedToId: employeeId
+  };
+  const createRes = await request(app)
+    .post('/tasks')
+    .set('Authorization', `Bearer ${managerToken}`)
+    .send(taskData);
+  const taskId = createRes.body.data.id;
+
+  const employeeLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: employeeData.email, password: employeeData.password });
+  const employeeToken = employeeLoginRes.body.data.token;
+
+  // Update the task as employee
+  const updateData = {
+    status: 'IN_PROGRESS',
+    completeDate: new Date().toISOString()
+  };
+  const updateRes = await request(app)
+    .put(`/tasks/${taskId}`)
+    .set('Authorization', `Bearer ${employeeToken}`)
+    .send(updateData);
+
+  expect(updateRes.status).toBe(200);
+  expect(updateRes.body.success).toBe(true);
+  expect(updateRes.body.message).toBe('Task updated successfully');
+  expect(updateRes.body.data).toMatchObject({
+    id: taskId,
+    title: 'Employee Task',
+    description: 'This is an employee task',
+    priority: 'MEDIUM',
+    status: 'IN_PROGRESS',
+    client: 'Test Client',
+    assignedToId: employeeId,
+    completeDate: expect.any(String) // Updated completeDate
+  });
+});
+
+// New test: EMPLOYEE cannot update a task not assigned to them
+it('should reject EMPLOYEE updating a task not assigned to them with 403', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData1 = {
+    name: 'Employee User 1',
+    email: `employee1${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+  const employeeData2 = {
+    name: 'Employee User 2',
+    email: `employee2${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes1 = await request(app)
+    .post('/auth/register')
+    .send(employeeData1);
+  const employeeId1 = employeeRes1.body.data.id;
+
+  const employeeRes2 = await request(app)
+    .post('/auth/register')
+    .send(employeeData2);
+  const employeeId2 = employeeRes2.body.data.id;
+
+  const managerLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const managerToken = managerLoginRes.body.data.token;
+
+  // Create a task assigned to employee2
+  const taskData = {
+    title: 'Task for Employee 2',
+    description: 'This is a task for employee 2',
+    priority: 'LOW',
+    assignDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'TO_DO',
+    startDate: new Date().toISOString(),
+    completeDate: null,
+    client: 'Test Client',
+    assignedToId: employeeId2
+  };
+  const createRes = await request(app)
+    .post('/tasks')
+    .set('Authorization', `Bearer ${managerToken}`)
+    .send(taskData);
+  const taskId = createRes.body.data.id;
+
+  const employeeLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: employeeData1.email, password: employeeData1.password });
+  const employeeToken = employeeLoginRes.body.data.token;
+
+  // Attempt to update task by employee1 (not assigned)
+  const updateData = {
+    status: 'IN_PROGRESS'
+  };
+  const updateRes = await request(app)
+    .put(`/tasks/${taskId}`)
+    .set('Authorization', `Bearer ${employeeToken}`)
+    .send(updateData);
+
+  expect(updateRes.status).toBe(403);
+  expect(updateRes.body.success).toBe(false);
+  expect(updateRes.body.message).toBe('Access denied: You are not assigned to this task');
+});
+
+// New test: Returns 404 for non-existent task ID
+it('should return 404 when updating a non-existent task ID', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Attempt to update a non-existent task
+  const nonExistentId = '123e4567-e89b-12d3-a456-426614174000'; // Valid UUID format, but not in DB
+  const updateData = {
+    status: 'IN_PROGRESS'
+  };
+  const updateRes = await request(app)
+    .put(`/tasks/${nonExistentId}`)
+    .set('Authorization', `Bearer ${token}`)
+    .send(updateData);
+
+  expect(updateRes.status).toBe(404);
+  expect(updateRes.body.success).toBe(false);
+  expect(updateRes.body.message).toBe('Task not found');
+});
+
+// New test: Returns 400 for invalid update data
+it('should return 400 for invalid update data', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Create a task
+  const taskData = {
+    title: 'Test Task',
+    description: 'This is a test task',
+    priority: 'HIGH',
+    assignDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'TO_DO',
+    startDate: new Date().toISOString(),
+    completeDate: null,
+    client: 'Test Client',
+    assignedToId: employeeId
+  };
+  const createRes = await request(app)
+    .post('/tasks')
+    .set('Authorization', `Bearer ${token}`)
+    .send(taskData);
+  const taskId = createRes.body.data.id;
+
+  // Attempt to update with invalid data
+  const invalidUpdateData = {
+    status: 'INVALID_STATUS', // Not a valid status enum
+    priority: 'INVALID_PRIORITY' // Not a valid priority enum
+  };
+  const updateRes = await request(app)
+    .put(`/tasks/${taskId}`)
+    .set('Authorization', `Bearer ${token}`)
+    .send(invalidUpdateData);
+
+  expect(updateRes.status).toBe(400);
+  expect(updateRes.body.success).toBe(false);
+  expect(updateRes.body.message).toBe('Validation failed');
+  expect(updateRes.body.data.errors).toEqual(expect.arrayContaining([
+    expect.objectContaining({ field: 'status', message: expect.stringContaining('"status" must be one of [TO_DO, IN_PROGRESS, SUBMITTED, IN_REVIEW, COMPLETED]') }),
+    expect.objectContaining({ field: 'priority', message: expect.stringContaining('"priority" must be one of [LOW, MEDIUM, HIGH]') })
+  ]));
+});
+
   afterEach(async () => {
     await prisma.task.deleteMany();
     await prisma.user.deleteMany({ where: { email: { contains: "test" } } });

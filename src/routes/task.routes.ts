@@ -3,7 +3,7 @@ import { TaskController } from '../controllers/task.controller.js';
 import { validate } from '../middlewares/validation.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { authorizeRole } from '../middlewares/role.js';
-import { taskSchema, querySchema, idSchema } from '../validations/task.validation.js';
+import { taskSchema, querySchema, idSchema, taskUpdateSchema } from '../validations/task.validation.js';
 
 const taskController = new TaskController();
 const router = express.Router();
@@ -28,8 +28,17 @@ router.get(
   '/:id',
   authenticateToken,
   authorizeRole(['MANAGER', 'EMPLOYEE']),
-  validate(idSchema, 'params'), // Validate task ID in params
+  validate(idSchema, 'params'),
   taskController.getTaskById.bind(taskController)
+);
+
+router.put(
+  '/:id',
+  authenticateToken,
+  authorizeRole(['MANAGER', 'EMPLOYEE']),
+  validate(idSchema, 'params'), // Validate task ID in params
+  validate(taskUpdateSchema, 'body'), // Validate update data in body
+  taskController.updateTaskById.bind(taskController)
 );
 
 export default router;

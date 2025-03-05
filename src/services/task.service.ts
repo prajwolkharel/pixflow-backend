@@ -144,7 +144,6 @@ export class TaskService {
   }
 
   async getTaskById(taskId: string, userId: string, userRole: string): Promise<TaskResponse> {
-    // Fetch task by ID
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       select: {
@@ -170,7 +169,6 @@ export class TaskService {
       throw new Error('Task not found');
     }
 
-    // Access control: EMPLOYEE can only fetch tasks assigned to them
     if (userRole === 'EMPLOYEE' && task.assignedToId !== userId) {
       throw new Error('Access denied: You are not assigned to this task');
     }
@@ -191,6 +189,81 @@ export class TaskService {
       assignedById: task.assignedById,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString()
+    };
+  }
+
+  async updateTaskById(
+    taskId: string,
+    userId: string,
+    userRole: string,
+    updateData: Partial<TaskRequest>
+  ): Promise<TaskResponse> {
+    // Fetch the existing task
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId }
+    });
+
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    // Access control: EMPLOYEE can only update tasks assigned to them
+    if (userRole === 'EMPLOYEE' && task.assignedToId !== userId) {
+      throw new Error('Access denied: You are not assigned to this task');
+    }
+
+    // Prepare update data, converting dates if provided
+    const dataToUpdate: any = {};
+    if (updateData.title) dataToUpdate.title = updateData.title;
+    if (updateData.description) dataToUpdate.description = updateData.description;
+    if (updateData.priority) dataToUpdate.priority = updateData.priority;
+    if (updateData.assignDate) dataToUpdate.assignDate = new Date(updateData.assignDate);
+    if (updateData.dueDate) dataToUpdate.dueDate = new Date(updateData.dueDate);
+    if (updateData.status) dataToUpdate.status = updateData.status;
+    if (updateData.startDate !== undefined) dataToUpdate.startDate = updateData.startDate ? new Date(updateData.startDate) : null;
+    if (updateData.completeDate !== undefined) dataToUpdate.completeDate = updateData.completeDate ? new Date(updateData.completeDate) : null;
+    if (updateData.client) dataToUpdate.client = updateData.client;
+    if (updateData.assignedToId) dataToUpdate.assignedToId = updateData.assignedToId;
+
+    // Update the task
+    const updatedTask = await this.prisma.task.update({
+      where: { id: taskId },
+      data: dataToUpdate,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        priority: true,
+        assignDate: true,
+        dueDate: true,
+        status: true,
+        startDate: true,
+        completeDate: true,
+        client: true,
+        isApproved: true,
+        assignedToId: true,
+        assignedById: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      id: updatedTask.id,
+      title: updatedTask.title,
+      description: updatedTask.description,
+      priority: updatedTask.priority,
+      assignDate: updatedTask.assignDate.toISOString(),
+      dueDate: updatedTask.dueDate.toISOString(),
+      status: updatedTask.status,
+      startDate: updatedTask.startDate ? updatedTask.startDate.toISOString() : updatedTask.startDate,
+      completeDate: updatedTask.completeDate ? updatedTask.completeDate.toISOString() : updatedTask.completeDate,
+      client: updatedTask.client,
+      isApproved: updatedTask.isApproved,
+      assignedToId: updatedTask.assignedToId,
+      assignedById: updatedTask.assignedById,
+      createdAt: updatedTask.createdAt.toISOString(),
+      updatedAt: updatedTask.updatedAt.toISOString()
     };
   }
 }

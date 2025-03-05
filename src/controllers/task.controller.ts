@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { TaskService } from '../services/task.service.js';
 import { TaskRequest, TaskResponse } from '../types/task.types.js';
-import { taskSchema, paginationSchema, querySchema, idSchema } from '../validations/task.validation.js';
+import { taskSchema, paginationSchema, querySchema, idSchema, taskUpdateSchema } from '../validations/task.validation.js';
 
 export class TaskController {
   private taskService: TaskService;
@@ -84,6 +84,24 @@ export class TaskController {
       next(error);
     }
   }
+
+  async updateTaskById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const taskId = req.params.id;
+      const userId = (req as any).user.id;
+      const userRole = (req as any).user.role;
+      const updateData = req.body as Partial<TaskRequest>;
+
+      const updatedTask = await this.taskService.updateTaskById(taskId, userId, userRole, updateData);
+      res.ok({
+        status: 200,
+        message: 'Task updated successfully',
+        data: updatedTask
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
-export { taskSchema, paginationSchema, querySchema, idSchema };
+export { taskSchema, paginationSchema, querySchema, idSchema, taskUpdateSchema };
