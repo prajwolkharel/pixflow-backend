@@ -80,7 +80,9 @@ export class TaskService {
     limit: number,
     offset: number,
     status?: string,
-    priority?: string
+    priority?: string,
+    sortBy: string = 'createdAt',
+    order: 'asc' | 'desc' = 'asc'
   ): Promise<{ tasks: TaskResponse[], totalCount: number }> {
     // Base where clause based on user role
     const whereClause: any = userRole === 'EMPLOYEE' ? { assignedToId: userId } : {};
@@ -96,13 +98,13 @@ export class TaskService {
     // Fetch total count with filters
     const totalCount = await this.prisma.task.count({ where: whereClause });
 
-    // Fetch paginated tasks with filters, ordered by createdAt ascending
+    // Fetch paginated tasks with filters and dynamic sorting
     const tasks = await this.prisma.task.findMany({
       where: whereClause,
       skip: offset,
       take: limit,
       orderBy: {
-        createdAt: 'asc'
+        [sortBy]: order
       },
       select: {
         id: true,

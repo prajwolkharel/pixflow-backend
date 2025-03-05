@@ -51,7 +51,7 @@ export const paginationSchema = Joi.object({
   })
 });
 
-export const filterSchema = Joi.object({
+export const querySchema = Joi.object({
   status: Joi.string().valid('TO_DO', 'IN_PROGRESS', 'SUBMITTED', 'IN_REVIEW', 'COMPLETED').optional().messages({
     'any.only': '"status" must be one of [TO_DO, IN_PROGRESS, SUBMITTED, IN_REVIEW, COMPLETED]'
   }),
@@ -66,5 +66,11 @@ export const filterSchema = Joi.object({
   offset: Joi.number().integer().min(0).default(0).messages({
     'number.base': '"offset" must be a number',
     'number.min': '"offset" must be greater than or equal to 0'
+  }),
+  sortBy: Joi.string().valid('title', 'dueDate', 'priority', 'status', 'createdAt').default('createdAt').messages({
+    'any.only': '"sortBy" must be one of [title, dueDate, priority, status, createdAt]'
+  }),
+  order: Joi.string().valid('asc', 'desc').default('asc').messages({
+    'any.only': '"order" must be one of [asc, desc]'
   })
 });
