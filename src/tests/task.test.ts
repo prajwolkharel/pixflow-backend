@@ -479,6 +479,296 @@ it('should reject invalid pagination parameters with 400', async () => {
   ]));
 });
 
+// New test: MANAGER can filter tasks by status
+it('should allow MANAGER to filter tasks by status', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Create tasks with different statuses
+  const tasks = [
+    { title: 'Task 1', description: 'Task 1', priority: 'HIGH', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'TO_DO', startDate: new Date().toISOString(), completeDate: null, client: 'Client 1', assignedToId: employeeId },
+    { title: 'Task 2', description: 'Task 2', priority: 'MEDIUM', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'IN_PROGRESS', startDate: new Date().toISOString(), completeDate: null, client: 'Client 2', assignedToId: employeeId },
+    { title: 'Task 3', description: 'Task 3', priority: 'LOW', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'TO_DO', startDate: new Date().toISOString(), completeDate: null, client: 'Client 3', assignedToId: employeeId }
+  ];
+
+  for (const taskData of tasks) {
+    await request(app)
+      .post('/tasks')
+      .set('Authorization', `Bearer ${token}`)
+      .send(taskData);
+  }
+
+  // Filter by status=TO_DO
+  const listRes = await request(app)
+    .get('/tasks?status=TO_DO')
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(listRes.status).toBe(200);
+  expect(listRes.body.success).toBe(true);
+  expect(listRes.body.message).toBe('Tasks fetched successfully');
+  expect(listRes.body.data.tasks).toBeInstanceOf(Array);
+  expect(listRes.body.data.tasks).toHaveLength(2); // Should return Task 1 and Task 3
+  expect(listRes.body.data.totalCount).toBe(2);
+  expect(listRes.body.data.filters).toEqual({ status: 'TO_DO', priority: undefined });
+});
+
+// New test: MANAGER can filter tasks by priority
+it('should allow MANAGER to filter tasks by priority', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Create tasks with different priorities
+  const tasks = [
+    { title: 'Task 1', description: 'Task 1', priority: 'HIGH', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'TO_DO', startDate: new Date().toISOString(), completeDate: null, client: 'Client 1', assignedToId: employeeId },
+    { title: 'Task 2', description: 'Task 2', priority: 'MEDIUM', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'IN_PROGRESS', startDate: new Date().toISOString(), completeDate: null, client: 'Client 2', assignedToId: employeeId },
+    { title: 'Task 3', description: 'Task 3', priority: 'HIGH', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'COMPLETED', startDate: new Date().toISOString(), completeDate: null, client: 'Client 3', assignedToId: employeeId }
+  ];
+
+  for (const taskData of tasks) {
+    await request(app)
+      .post('/tasks')
+      .set('Authorization', `Bearer ${token}`)
+      .send(taskData);
+  }
+
+  // Filter by priority=HIGH
+  const listRes = await request(app)
+    .get('/tasks?priority=HIGH')
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(listRes.status).toBe(200);
+  expect(listRes.body.success).toBe(true);
+  expect(listRes.body.message).toBe('Tasks fetched successfully');
+  expect(listRes.body.data.tasks).toBeInstanceOf(Array);
+  expect(listRes.body.data.tasks).toHaveLength(2); // Should return Task 1 and Task 3
+  expect(listRes.body.data.totalCount).toBe(2);
+  expect(listRes.body.data.filters).toEqual({ status: undefined, priority: 'HIGH' });
+});
+
+// New test: MANAGER can filter tasks by both status and priority
+it('should allow MANAGER to filter tasks by both status and priority', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Create tasks with different statuses and priorities
+  const tasks = [
+    { title: 'Task 1', description: 'Task 1', priority: 'HIGH', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'TO_DO', startDate: new Date().toISOString(), completeDate: null, client: 'Client 1', assignedToId: employeeId },
+    { title: 'Task 2', description: 'Task 2', priority: 'HIGH', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'IN_PROGRESS', startDate: new Date().toISOString(), completeDate: null, client: 'Client 2', assignedToId: employeeId },
+    { title: 'Task 3', description: 'Task 3', priority: 'LOW', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'TO_DO', startDate: new Date().toISOString(), completeDate: null, client: 'Client 3', assignedToId: employeeId }
+  ];
+
+  for (const taskData of tasks) {
+    await request(app)
+      .post('/tasks')
+      .set('Authorization', `Bearer ${token}`)
+      .send(taskData);
+  }
+
+  // Filter by status=TO_DO and priority=HIGH
+  const listRes = await request(app)
+    .get('/tasks?status=TO_DO&priority=HIGH')
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(listRes.status).toBe(200);
+  expect(listRes.body.success).toBe(true);
+  expect(listRes.body.message).toBe('Tasks fetched successfully');
+  expect(listRes.body.data.tasks).toBeInstanceOf(Array);
+  expect(listRes.body.data.tasks).toHaveLength(1); // Should return only Task 1
+  expect(listRes.body.data.totalCount).toBe(1);
+  expect(listRes.body.data.filters).toEqual({ status: 'TO_DO', priority: 'HIGH' });
+});
+
+// New test: EMPLOYEE can filter assigned tasks by status
+it('should allow EMPLOYEE to filter assigned tasks by status', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData1 = {
+    name: 'Employee User 1',
+    email: `employee1${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+  const employeeData2 = {
+    name: 'Employee User 2',
+    email: `employee2${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes1 = await request(app)
+    .post('/auth/register')
+    .send(employeeData1);
+  const employeeId1 = employeeRes1.body.data.id;
+
+  const employeeRes2 = await request(app)
+    .post('/auth/register')
+    .send(employeeData2);
+  const employeeId2 = employeeRes2.body.data.id;
+
+  const managerLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const managerToken = managerLoginRes.body.data.token;
+
+  // Create tasks for employee1 and employee2
+  const tasks = [
+    { title: 'Task 1', description: 'Task 1', priority: 'HIGH', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'TO_DO', startDate: new Date().toISOString(), completeDate: null, client: 'Client 1', assignedToId: employeeId1 },
+    { title: 'Task 2', description: 'Task 2', priority: 'MEDIUM', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'IN_PROGRESS', startDate: new Date().toISOString(), completeDate: null, client: 'Client 2', assignedToId: employeeId1 },
+    { title: 'Task 3', description: 'Task 3', priority: 'LOW', assignDate: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'TO_DO', startDate: new Date().toISOString(), completeDate: null, client: 'Client 3', assignedToId: employeeId2 }
+  ];
+
+  for (const taskData of tasks) {
+    await request(app)
+      .post('/tasks')
+      .set('Authorization', `Bearer ${managerToken}`)
+      .send(taskData);
+  }
+
+  const employeeLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: employeeData1.email, password: employeeData1.password });
+  const employeeToken = employeeLoginRes.body.data.token;
+
+  // Filter by status=TO_DO for employee1
+  const listRes = await request(app)
+    .get('/tasks?status=TO_DO')
+    .set('Authorization', `Bearer ${employeeToken}`);
+
+  expect(listRes.status).toBe(200);
+  expect(listRes.body.success).toBe(true);
+  expect(listRes.body.message).toBe('Tasks fetched successfully');
+  expect(listRes.body.data.tasks).toBeInstanceOf(Array);
+  expect(listRes.body.data.tasks).toHaveLength(1); // Should return only Task 1 (assigned to employee1)
+  expect(listRes.body.data.totalCount).toBe(1);
+  expect(listRes.body.data.filters).toEqual({ status: 'TO_DO', priority: undefined });
+});
+
+// New test: Handle invalid filter parameters
+it('should reject invalid filter parameters with 400', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Invalid status
+  const listRes1 = await request(app)
+    .get('/tasks?status=INVALID')
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(listRes1.status).toBe(400);
+  expect(listRes1.body.success).toBe(false);
+  expect(listRes1.body.message).toBe('Validation failed');
+  expect(listRes1.body.data.errors).toEqual(expect.arrayContaining([
+    expect.objectContaining({ field: 'status', message: expect.stringContaining('"status" must be one of [TO_DO, IN_PROGRESS, SUBMITTED, IN_REVIEW, COMPLETED]') })
+  ]));
+
+  // Invalid priority
+  const listRes2 = await request(app)
+    .get('/tasks?priority=INVALID')
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(listRes2.status).toBe(400);
+  expect(listRes2.body.data.errors).toEqual(expect.arrayContaining([
+    expect.objectContaining({ field: 'priority', message: expect.stringContaining('"priority" must be one of [LOW, MEDIUM, HIGH]') })
+  ]));
+});
+
   afterEach(async () => {
     await prisma.task.deleteMany();
     await prisma.user.deleteMany({ where: { email: { contains: 'test' } } });

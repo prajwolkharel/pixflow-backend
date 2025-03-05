@@ -11,6 +11,7 @@ export const validate = (schema: Joi.ObjectSchema, source: 'body' | 'query' | 'p
         field: detail.path.join('.'),
         message: detail.message
       }));
+
       res.status(400).json({
         success: false,
         message: 'Validation failed',

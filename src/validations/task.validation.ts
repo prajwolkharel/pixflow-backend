@@ -50,3 +50,21 @@ export const paginationSchema = Joi.object({
     'number.min': '"offset" must be greater than or equal to 0'
   })
 });
+
+export const filterSchema = Joi.object({
+  status: Joi.string().valid('TO_DO', 'IN_PROGRESS', 'SUBMITTED', 'IN_REVIEW', 'COMPLETED').optional().messages({
+    'any.only': '"status" must be one of [TO_DO, IN_PROGRESS, SUBMITTED, IN_REVIEW, COMPLETED]'
+  }),
+  priority: Joi.string().valid('LOW', 'MEDIUM', 'HIGH').optional().messages({
+    'any.only': '"priority" must be one of [LOW, MEDIUM, HIGH]'
+  }),
+  limit: Joi.number().integer().min(1).max(100).default(10).messages({
+    'number.base': '"limit" must be a number',
+    'number.min': '"limit" must be greater than or equal to 1',
+    'number.max': '"limit" must be less than or equal to 100'
+  }),
+  offset: Joi.number().integer().min(0).default(0).messages({
+    'number.base': '"offset" must be a number',
+    'number.min': '"offset" must be greater than or equal to 0'
+  })
+});

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { TaskService } from '../services/task.service.js';
 import { TaskRequest, TaskResponse } from '../types/task.types.js';
-import { taskSchema, paginationSchema } from '../validations/task.validation.js';
+import { taskSchema, paginationSchema, filterSchema } from '../validations/task.validation.js';
 
 export class TaskController {
   private taskService: TaskService;
@@ -39,8 +39,10 @@ export class TaskController {
       const userRole = (req as any).user.role;
       const limit = parseInt(req.query.limit as string) || 10;
       const offset = parseInt(req.query.offset as string) || 0;
+      const status = req.query.status as string | undefined;
+      const priority = req.query.priority as string | undefined;
 
-      const { tasks, totalCount } = await this.taskService.listTasks(userId, userRole, limit, offset);
+      const { tasks, totalCount } = await this.taskService.listTasks(userId, userRole, limit, offset, status, priority);
       res.ok({
         status: 200,
         message: 'Tasks fetched successfully',
@@ -48,7 +50,11 @@ export class TaskController {
           tasks,
           totalCount,
           limit,
-          offset
+          offset,
+          filters: {
+            status,
+            priority
+          }
         }
       });
     } catch (error) {
@@ -57,4 +63,4 @@ export class TaskController {
   }
 }
 
-export { taskSchema, paginationSchema };
+export { taskSchema, paginationSchema, filterSchema };
