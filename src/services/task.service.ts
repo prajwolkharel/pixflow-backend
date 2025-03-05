@@ -264,7 +264,6 @@ export class TaskService {
   }
 
   async deleteTaskById(taskId: string, userRole: string): Promise<void> {
-    // Fetch the task to check existence
     const task = await this.prisma.task.findUnique({
       where: { id: taskId }
     });
@@ -273,14 +272,74 @@ export class TaskService {
       throw new Error('Task not found');
     }
 
-    // Access control: Only MANAGER can delete tasks
     if (userRole !== 'MANAGER') {
       throw new Error('Access denied: Requires MANAGER role');
     }
 
-    // Delete the task
     await this.prisma.task.delete({
       where: { id: taskId }
     });
+  }
+
+  async approveTaskById(taskId: string, userRole: string): Promise<TaskResponse> {
+    // Fetch the task to check existence and current approval status
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId }
+    });
+
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    // Access control: Only MANAGER can approve tasks
+    if (userRole !== 'MANAGER') {
+      throw new Error('Access denied: Requires MANAGER role');
+    }
+
+    // Check if the task is already approved
+    if (task.isApproved) {
+      throw new Error('Task is already approved');
+    }
+
+    // Update the task to set isApproved to true
+    const updatedTask = await this.prisma.task.update({
+      where: { id: taskId },
+      data: { isApproved: true },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        priority: true,
+        assignDate: true,
+        dueDate: true,
+        status: true,
+        startDate: true,
+        completeDate: true,
+        client: true,
+        isApproved: true,
+        assignedToId: true,
+        assignedById: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      id: updatedTask.id,
+      title: updatedTask.title,
+      description: updatedTask.description,
+      priority: updatedTask.priority,
+      assignDate: updatedTask.assignDate.toISOString(),
+      dueDate: updatedTask.dueDate.toISOString(),
+      status: updatedTask.status,
+      startDate: updatedTask.startDate ? updatedTask.startDate.toISOString() : updatedTask.startDate,
+      completeDate: updatedTask.completeDate ? updatedTask.completeDate.toISOString() : updatedTask.completeDate,
+      client: updatedTask.client,
+      isApproved: updatedTask.isApproved,
+      assignedToId: updatedTask.assignedToId,
+      assignedById: updatedTask.assignedById,
+      createdAt: updatedTask.createdAt.toISOString(),
+      updatedAt: updatedTask.updatedAt.toISOString()
+    };
   }
 }

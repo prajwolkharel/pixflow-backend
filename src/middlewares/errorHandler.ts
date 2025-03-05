@@ -28,6 +28,10 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
       status = 404;
     } else if (message === 'Access denied: You are not assigned to this task') {
       status = 403;
+    } else if (message === 'Access denied: Requires MANAGER role') {
+      status = 403;
+    } else if (message === 'Task is already approved') {
+      status = 409;
     }
   }
 

@@ -2250,6 +2250,267 @@ it('should return 400 for invalid task ID format when deleting', async () => {
     expect.objectContaining({ field: 'id', message: expect.stringContaining('"id" must be a valid GUID') })
   ]));
 });
+
+// New test: MANAGER can approve a task by ID
+it('should allow MANAGER to approve a task by ID', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Create a task
+  const taskData = {
+    title: 'Task to Approve',
+    description: 'This task will be approved',
+    priority: 'HIGH',
+    assignDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'SUBMITTED', // Assuming approval happens after submission
+    startDate: new Date().toISOString(),
+    completeDate: null,
+    client: 'Test Client',
+    assignedToId: employeeId
+  };
+  const createRes = await request(app)
+    .post('/tasks')
+    .set('Authorization', `Bearer ${token}`)
+    .send(taskData);
+  const taskId = createRes.body.data.id;
+
+  // Approve the task
+  const approveRes = await request(app)
+    .post(`/tasks/${taskId}/approve`)
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(approveRes.status).toBe(200);
+  expect(approveRes.body.success).toBe(true);
+  expect(approveRes.body.message).toBe('Task approved successfully');
+  expect(approveRes.body.data).toMatchObject({
+    id: taskId,
+    title: 'Task to Approve',
+    description: 'This task will be approved',
+    priority: 'HIGH',
+    status: 'SUBMITTED',
+    client: 'Test Client',
+    assignedToId: employeeId,
+    isApproved: true
+  });
+});
+
+// New test: MANAGER cannot approve an already approved task
+it('should reject MANAGER approving an already approved task with 409', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Create a task and approve it initially
+  const taskData = {
+    title: 'Approved Task',
+    description: 'This task is already approved',
+    priority: 'MEDIUM',
+    assignDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'SUBMITTED',
+    startDate: new Date().toISOString(),
+    completeDate: null,
+    client: 'Test Client',
+    assignedToId: employeeId
+  };
+  const createRes = await request(app)
+    .post('/tasks')
+    .set('Authorization', `Bearer ${token}`)
+    .send(taskData);
+  const taskId = createRes.body.data.id;
+
+  // Approve the task first time
+  await request(app)
+    .post(`/tasks/${taskId}/approve`)
+    .set('Authorization', `Bearer ${token}`);
+
+  // Attempt to approve it again
+  const approveRes = await request(app)
+    .post(`/tasks/${taskId}/approve`)
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(approveRes.status).toBe(409);
+  expect(approveRes.body.success).toBe(false);
+  expect(approveRes.body.message).toBe('Task is already approved');
+});
+
+// New test: EMPLOYEE cannot approve a task
+it('should reject EMPLOYEE approving a task with 403', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+  const employeeData = {
+    name: 'Employee User',
+    email: `employee${timestamp}@example.com`,
+    password: 'password123',
+    role: 'EMPLOYEE'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const employeeRes = await request(app)
+    .post('/auth/register')
+    .send(employeeData);
+  const employeeId = employeeRes.body.data.id;
+
+  const managerLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const managerToken = managerLoginRes.body.data.token;
+
+  // Create a task assigned to the employee
+  const taskData = {
+    title: 'Employee Task',
+    description: 'This is an employee task',
+    priority: 'MEDIUM',
+    assignDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'SUBMITTED',
+    startDate: new Date().toISOString(),
+    completeDate: null,
+    client: 'Test Client',
+    assignedToId: employeeId
+  };
+  const createRes = await request(app)
+    .post('/tasks')
+    .set('Authorization', `Bearer ${managerToken}`)
+    .send(taskData);
+  const taskId = createRes.body.data.id;
+
+  const employeeLoginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: employeeData.email, password: employeeData.password });
+  const employeeToken = employeeLoginRes.body.data.token;
+
+  // Attempt to approve the task as employee
+  const approveRes = await request(app)
+    .post(`/tasks/${taskId}/approve`)
+    .set('Authorization', `Bearer ${employeeToken}`);
+
+  expect(approveRes.status).toBe(403);
+  expect(approveRes.body.success).toBe(false);
+  expect(approveRes.body.message).toBe('Access denied: Requires MANAGER role');
+});
+
+// New test: Returns 404 for non-existent task ID
+it('should return 404 when approving a non-existent task ID', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Attempt to approve a non-existent task
+  const nonExistentId = '123e4567-e89b-12d3-a456-426614174000'; // Valid UUID format, but not in DB
+  const approveRes = await request(app)
+    .post(`/tasks/${nonExistentId}/approve`)
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(approveRes.status).toBe(404);
+  expect(approveRes.body.success).toBe(false);
+  expect(approveRes.body.message).toBe('Task not found');
+});
+
+// New test: Returns 400 for invalid task ID format
+it('should return 400 for invalid task ID format when approving', async () => {
+  const timestamp = Date.now();
+  const managerData = {
+    name: 'Manager User',
+    email: `manager${timestamp}@example.com`,
+    password: 'password123',
+    role: 'MANAGER'
+  };
+
+  const managerRes = await request(app)
+    .post('/auth/register')
+    .send(managerData);
+
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: managerData.email, password: managerData.password });
+  const token = loginRes.body.data.token;
+
+  // Attempt to approve with invalid ID format
+  const invalidId = 'not-a-uuid';
+  const approveRes = await request(app)
+    .post(`/tasks/${invalidId}/approve`)
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(approveRes.status).toBe(400);
+  expect(approveRes.body.success).toBe(false);
+  expect(approveRes.body.message).toBe('Validation failed');
+  expect(approveRes.body.data.errors).toEqual(expect.arrayContaining([
+    expect.objectContaining({ field: 'id', message: expect.stringContaining('"id" must be a valid GUID') })
+  ]));
+});
+
   afterEach(async () => {
     await prisma.task.deleteMany();
     await prisma.user.deleteMany({ where: { email: { contains: "test" } } });

@@ -118,6 +118,22 @@ export class TaskController {
       next(error);
     }
   }
+
+  async approveTaskById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const taskId = req.params.id;
+      const userRole = (req as any).user.role;
+
+      const approvedTask = await this.taskService.approveTaskById(taskId, userRole);
+      res.ok({
+        status: 200,
+        message: 'Task approved successfully',
+        data: approvedTask
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export { taskSchema, paginationSchema, querySchema, idSchema, taskUpdateSchema };
